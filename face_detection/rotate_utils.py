@@ -62,6 +62,13 @@ class FaceAlignment:
         self.desired_left_eye = desired_left_eye
         self.landmark_predictor = landmark_predictor
         
+    def align_from_path(self, img_path, bbox):
+        img = self.load_rgb_image(img_path)
+        rect = self.cvt_bbox2rect(bbox)
+        landmark = self.predict_landmark(img, rect)
+        img_aligned = self.align(img, landmark)
+        return img_aligned
+        
     def load_rgb_image(self, path):
         return dlib.load_rgb_image(path)
     
@@ -103,6 +110,38 @@ class FaceAlignment:
                                     (desired_face_width, desired_face_height), 
                                     flags=cv2.INTER_CUBIC)
         return img_aligned
+        
+        
+    def _extract_left_eye_center(self, shape):
+        x = (shape.part(0).x + shape.part(1).x) // 2
+        y = (shape.part(0).y + shape.part(1).y) // 2
+        return (x, y)
+
+    def _extract_right_eye_center(self, shape):
+        x = (shape.part(2).x + shape.part(3).x) // 2
+        y = (shape.part(2).y + shape.part(3).y) // 2
+        return (x, y)
+
+    def _angle_between_2_points(self, p1, p2):
+        x1, y1 = p1
+        x2, y2 = p2
+        if x2 - x1 == 0:
+            if y2 > y1:
+                return 90
+            else: 
+                return -90
+        tan = (y2 - y1) / (x2 - x1)
+        return np.degrees(np.arctan(tan))
+
+    def _get_rotation_matrix(self, p1, p2):
+        angle = self._angle_between_2_points(p1, p2)
+        x1, y1 = p1
+        x2, y2 = p2
+        xc = (x1 + x2) // 2
+        yc = (y1 + y2) // 2
+        M = cv2.getRotationMatrix2D((xc, yc), angle, 1)
+        return M, angle, (xc, yc)
+            
         
         
     def _extract_left_eye_center(self, shape):
