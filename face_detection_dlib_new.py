@@ -73,7 +73,7 @@ def detect(input_df_path, output_folder_path, start_idx=0, end_idx=None, gpu=0, 
     
     if os.path.exists(output_folder_path + '/detection_metadata.csv') is False:
         with open(output_folder_path + '/detection_metadata.csv', 'w') as f:
-            f.write('img_path,cropped_img_path,k,x1,y1,x2,y2,confidence,rotation,rotation_center_x,rotation_center_y,error\n')
+            f.write('img_path,cropped_img_path,aligned_img_pathk,x1,y1,x2,y2,confidence,rotation,rotation_center_x,rotation_center_y,error\n')
 
     # Iterate all files
     for idx, row in input_df.iloc[start_idx:end_idx,:].iterrows():
@@ -95,7 +95,7 @@ def detect(input_df_path, output_folder_path, start_idx=0, end_idx=None, gpu=0, 
             if faces is None:
                 print('detection error'.format(len(faces)))
                 error_code = 2
-                f.write("{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, "",0, 0, 0, 0, 0, 0, 0, 0, 0, error_code))
+                f.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, "","",0, 0, 0, 0, 0, 0, 0, 0, 0, error_code))
                 
             elif len(faces) > 0:
                 error_code = 0
@@ -127,17 +127,18 @@ def detect(input_df_path, output_folder_path, start_idx=0, end_idx=None, gpu=0, 
                     cropped_save_path = os.path.join(detection_cropped_output, "{}_{}.jpg".format(img_save_name, k))
                     plt.imsave(cropped_save_path, img_crop)
                     
+                    aligned_save_path = ""
                     if align:
                         img_aligned = face_align_dlib(img_raw, face_landmark, rect)
                         aligned_save_path = os.path.join(detection_aligned_output, "{}_{}.jpg".format(img_save_name, k))
                         plt.imsave(aligned_save_path, img_aligned)
 
                     # img_path, x1,y1,x2,y2, rotation, rotation_center, error
-                    f.write("{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, "", k, bbox[0], bbox[1], bbox[2], bbox[3], confidence, angle, center[0], center[1], error_code))
+                    f.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, cropped_save_path, aligned_save_path, k, bbox[0], bbox[1], bbox[2], bbox[3], confidence, angle, center[0], center[1], error_code))
             else:
                 print('detected {} faces'.format(len(faces)))
                 error_code = 3
-                f.write("{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, error_code))
+                f.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(img_path, "", "", 0, 0, 0, 0, 0, 0, 0, 0, 0, error_code))
         f.close()
        
 
