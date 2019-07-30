@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint
 from keras.optimizers import SGD, Adam
-from generator import FaceGenerator, ValGenerator
+from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 
 
@@ -17,19 +17,21 @@ from model import get_model, age_mae, mean_variance_loss
 def get_args():
     parser = argparse.ArgumentParser(description="This script trains the CNN model for age estimation.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--meta_train_csv", type=str, required=True,
-                        help="path to the MegaAge dataset")
-    parser.add_argument("--output_dir", type=str, default="checkpoints",
+    parser.add_argument("--meta-train-csv", type=str, required=True,
+                        help="path to the train dataset csv")
+    parser.add_argument("--meta-test-csv", type=str, required=True,
+                        help="path to the test dataset csv")
+    parser.add_argument("--output-dir", type=str, default="checkpoints",
                         help="checkpoint dir")
-    parser.add_argument("--batch_size", type=int, default=32,
+    parser.add_argument("--batch-size", type=int, default=32,
                         help="batch size")
-    parser.add_argument("--nb_epochs", type=int, default=30,
+    parser.add_argument("--nb-epochs", type=int, default=30,
                         help="number of epochs")
     parser.add_argument("--lr", type=float, default=0.1,
                         help="learning rate")
     parser.add_argument("--opt", type=str, default="sgd",
                         help="optimizer name; 'sgd' or 'adam'")
-    parser.add_argument("--model_name", type=str, default="ResNet50",
+    parser.add_argument("--model-name", type=str, default="ResNet50",
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
     args = parser.parse_args()
     return args
@@ -62,6 +64,7 @@ def get_optimizer(opt_name, lr):
 def main():
     args = get_args()
     meta_train_csv = args.meta_train_csv
+    meta_test_csv = args.meta_test_csv
     model_name = args.model_name
     batch_size = args.batch_size
     nb_epochs = args.nb_epochs
@@ -74,7 +77,7 @@ def main():
         image_size = 299
 
     train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
-    val_gen = ValGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
+    val_gen = FaceValGenerator(meta_test_csv, batch_size=batch_size, image_size=image_size)
     model = get_model(model_name=model_name)
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss=mean_variance_loss, metrics=[age_mae])

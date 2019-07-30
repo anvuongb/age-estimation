@@ -5,14 +5,18 @@ from keras.models import Model
 from keras import backend as K
 import numpy as np
 
+# CHANGE NUM_AGE_BINS ACCORDINGLY
+
+NUM_AGE_BINS = 70
+
 def age_mae(y_true, y_pred):
-    true_age = K.sum(y_true * K.arange(0, 70, dtype="float32"), axis=-1)
-    pred_age = K.sum(y_pred * K.arange(0, 70, dtype="float32"), axis=-1)
+    true_age = K.sum(y_true * K.arange(0, NUM_AGE_BINS, dtype="float32"), axis=-1)
+    pred_age = K.sum(y_pred * K.arange(0, NUM_AGE_BINS, dtype="float32"), axis=-1)
     mae = K.mean(K.abs(true_age - pred_age))
     return mae
 
 
-def get_model(model_name="ResNet50"):
+def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
     base_model = None
 
     if model_name == "ResNet50":
@@ -22,7 +26,7 @@ def get_model(model_name="ResNet50"):
     elif model_name == "InceptionV3":
         base_model = InceptionV3(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
 
-    prediction = Dense(units=70, kernel_initializer="he_normal", use_bias=False, activation="softmax",
+    prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
                        name="pred_age")(base_model.output)
 
     model = Model(inputs=base_model.input, outputs=prediction)
@@ -30,7 +34,7 @@ def get_model(model_name="ResNet50"):
     return model
 
 def mean_variance_loss(y_true, y_pred):
-    n_bins = 70
+    n_bins = NUM_AGE_BINS
     ages = K.constant(np.arange(0, n_bins), dtype=float)
 
     mean_age_true = K.sum(y_true * ages, axis=-1)

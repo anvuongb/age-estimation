@@ -79,7 +79,7 @@ class FaceGenerator(Sequence):
             self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
 
 
-class ValGenerator(Sequence):
+class FaceValGenerator(Sequence):
     def __init__(self, meta_csv_path, batch_size=32, image_size=224):
         self.image_path_and_age = []
         self._load_meta_csv(meta_csv_path)
