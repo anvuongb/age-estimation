@@ -48,7 +48,7 @@ def main(input_csv_path, output_csv_path, model_name, batch_size):
     input_df = pd.read_csv(input_csv_path)
     output_df = input_df[["img_path"]]
     output_df["pred_age_dist"] = list(predictions)
-    output_df.to_csv(output_csv_path)
+    output_df.to_csv(output_csv_path, index=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
