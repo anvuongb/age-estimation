@@ -42,8 +42,8 @@ def main(input_csv_path, output_csv_path, model_name, batch_size):
     predictions = model.predict_generator(pred_gen)
     end = time.time()
     print('prediction took {:.4f}s\n\n'.format(end-start))
+    
     # Save
-
     print('saving results into {}'.format(output_csv_path))
     input_df = pd.read_csv(input_csv_path)
     output_df = input_df[["img_path"]]
