@@ -50,15 +50,21 @@ class FaceGenerator(Sequence):
         self.transform_image = get_transform_func()
 
     def __len__(self):
-        return self.image_num // self.batch_size
+        return int(np.ceil(self.image_num/self.batch_size))
 
     def __getitem__(self, idx):
         batch_size = self.batch_size
         image_size = self.image_size
-        x = np.zeros((batch_size, image_size, image_size, 3), dtype=np.uint8)
-        y = np.zeros((batch_size, 1), dtype=np.int32)
 
-        sample_indices = self.indices[idx * batch_size:(idx + 1) * batch_size]
+        idx_min = idx*batch_size
+        idx_max = min(idx_min + batch_size, len(self.image_path_and_age))
+
+        current_batch_size = idx_max - idx_min
+
+        x = np.zeros((current_batch_size, image_size, image_size, 3), dtype=np.uint8)
+        y = np.zeros((current_batch_size, 1), dtype=np.int32)
+
+        sample_indices = self.indices[idx_min:idx_max]
 
         for i, sample_id in enumerate(sample_indices):
             image_path, age = self.image_path_and_age[sample_id]
@@ -88,16 +94,21 @@ class FaceValGenerator(Sequence):
         self.image_size = image_size
 
     def __len__(self):
-        return self.image_num // self.batch_size
+        return int(np.ceil(self.image_num/self.batch_size))
 
     def __getitem__(self, idx):
         batch_size = self.batch_size
         image_size = self.image_size
-        x = np.zeros((batch_size, image_size, image_size, 3), dtype=np.uint8)
-        y = np.zeros((batch_size, 1), dtype=np.int32)
+        
+        idx_min = idx*batch_size
+        idx_max = min(idx_min + batch_size, len(self.image_path_and_age))
 
-        for i in range(batch_size):
-            image_path, age = self.image_path_and_age[idx * batch_size + i]
+        current_batch_size = idx_max - idx_min
+
+        x = np.zeros((current_batch_size, image_size, image_size, 3), dtype=np.uint8)
+        y = np.zeros((current_batch_size, 1), dtype=np.int32)
+
+        for i, (image_path, age) in enumerate(self.image_path_and_age[idx_min:idx_max]):
             image = cv2.imread(str(image_path))
             x[i] = cv2.resize(image, (image_size, image_size))
             y[i] = age
@@ -109,3 +120,5 @@ class FaceValGenerator(Sequence):
 
         for idx, row in meta_csv.iterrows():
             self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
+
+    
