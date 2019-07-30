@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from model import get_model
 from generator import FaceValGenerator
 
-def main(input_csv_path, output_csv_path, model_name, batch_size):
+def main(input_csv_path, output_pkl_path, model_name, batch_size):
     # Load age predictor
     if model_name == 'InceptionResNetV2':
         # path to trained InceptionResNetV2
@@ -33,7 +33,7 @@ def main(input_csv_path, output_csv_path, model_name, batch_size):
     model.load_weights(weight_file)
     image_size = model.input.shape.as_list()[1]
     end = time.time()
-    print('load weights took {:.4f}s\n\n'.format(end-start))
+    print('load weights took {:.4f}s\n'.format(end-start))
 
     # Prediction data generator
     start = time.time()
@@ -41,14 +41,14 @@ def main(input_csv_path, output_csv_path, model_name, batch_size):
     pred_gen = FaceValGenerator(input_csv_path, batch_size=batch_size, image_size=image_size)
     predictions = model.predict_generator(pred_gen)
     end = time.time()
-    print('prediction took {:.4f}s\n\n'.format(end-start))
+    print('prediction took {:.4f}s\n'.format(end-start))
     
     # Save
-    print('saving results into {}'.format(output_csv_path))
+    print('saving results into {}'.format(output_pkl_path))
     input_df = pd.read_csv(input_csv_path)
-    output_df = input_df[["img_path"]]
-    output_df["pred_age_dist"] = list(predictions)
-    output_df.to_csv(output_csv_path, index=False)
+    img_path_list = input_df["img_path"].tolist()
+    output_df = pd.DataFrame(list(zip(img_path_list, predictions)), columns=["img_path", "pred_age_dist"])
+    output_df.to_pickle(output_pkl_path, protocol=2)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
