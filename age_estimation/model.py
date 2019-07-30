@@ -8,6 +8,7 @@ import numpy as np
 # CHANGE NUM_AGE_BINS ACCORDINGLY
 
 NUM_AGE_BINS = 70
+MEAN_VARIAANCE_ALPHA = 0.7
 
 def age_mae(y_true, y_pred):
     true_age = K.sum(y_true * K.arange(0, NUM_AGE_BINS, dtype="float32"), axis=-1)
@@ -69,8 +70,7 @@ def mean_variance_loss(y_true, y_pred):
     
     softmax_loss = K.categorical_crossentropy(y_true, y_pred, from_logits=False)
     
-    alpha=0.7
-    
+    alpha = MEAN_VARIAANCE_ALPHA
     total_loss = alpha*K.mean(mean_loss/n_bins, axis=-1) + (1-alpha)*K.mean(variance_loss, axis=-1) + K.mean(softmax_loss, axis=-1) # scale by 1/n_bins to be in the same scale
     
 #     print("ages = {}".format(ages.eval()))
