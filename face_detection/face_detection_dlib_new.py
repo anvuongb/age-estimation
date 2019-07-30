@@ -73,7 +73,7 @@ def detect(input_df_path, output_folder_path, start_idx=0, end_idx=None, gpu=0, 
     
     if os.path.exists(output_folder_path + '/detection_metadata.csv') is False:
         with open(output_folder_path + '/detection_metadata.csv', 'w') as f:
-            f.write('img_path,cropped_img_path,aligned_img_pathk,x1,y1,x2,y2,confidence,rotation,rotation_center_x,rotation_center_y,error\n')
+            f.write('img_path,cropped_img_path,aligned_img_path,k,x1,y1,x2,y2,confidence,rotation,rotation_center_x,rotation_center_y,error\n')
 
     # Iterate all files
     for idx, row in input_df.iloc[start_idx:end_idx,:].iterrows():
