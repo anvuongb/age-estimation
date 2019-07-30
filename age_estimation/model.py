@@ -8,14 +8,13 @@ import numpy as np
 # CHANGE NUM_AGE_BINS ACCORDINGLY
 
 NUM_AGE_BINS = 70
-MEAN_VARIAANCE_ALPHA = 0.7
+MEAN_VARIANCE_ALPHA = 0.7
 
 def age_mae(y_true, y_pred):
     true_age = K.sum(y_true * K.arange(0, NUM_AGE_BINS, dtype="float32"), axis=-1)
     pred_age = K.sum(y_pred * K.arange(0, NUM_AGE_BINS, dtype="float32"), axis=-1)
     mae = K.mean(K.abs(true_age - pred_age))
     return mae
-
 
 def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
     base_model = None
@@ -70,7 +69,7 @@ def mean_variance_loss(y_true, y_pred):
     
     softmax_loss = K.categorical_crossentropy(y_true, y_pred, from_logits=False)
     
-    alpha = MEAN_VARIAANCE_ALPHA
+    alpha = MEAN_VARIANCE_ALPHA
     total_loss = alpha*K.mean(mean_loss/n_bins, axis=-1) + (1-alpha)*K.mean(variance_loss, axis=-1) + K.mean(softmax_loss, axis=-1) # scale by 1/n_bins to be in the same scale
     
 #     print("ages = {}".format(ages.eval()))
