@@ -32,19 +32,64 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
     model = Model(inputs=base_model.input, outputs=prediction)
 
     return model
+def mean_loss(y_true, y_pred):
+    n_bins = NUM_AGE_BINS
+    mean_age_true = K.sum(y_true * K.arange(0, n_bins, dtype="float32"), axis=-1)
+    mean_age_pred = K.sum(y_pred * K.arange(0, n_bins, dtype="float32"), axis=-1)
+    
+    mean_loss = K.square(mean_age_pred - mean_age_true)
+    mean_loss_l2norm = tf.nn.l2_normalize(mean_loss)
+    
+    return K.mean(mean_loss, axis=-1)
+
+def variance_loss(y_true, y_pred):
+    n_bins = NUM_AGE_BINS
+    mean_age_true = K.sum(y_true * K.arange(0, n_bins, dtype="float32"), axis=-1)
+    mean_age_pred = K.sum(y_pred * K.arange(0, n_bins, dtype="float32"), axis=-1)
+    
+    repeat = K.repeat(K.reshape(mean_age_pred, (-1, 1)), n_bins)
+    repeat = K.reshape(repeat, (-1, n_bins))
+    
+    variance_loss = K.sum(K.square(repeat - ages)*y_pred, axis=1)
+    variance_loss_l2norm = tf.nn.l2_normalize(variance_loss)
+    
+    return K.mean(variance_loss, axis=-1) 
 
 def mean_variance_loss(y_true, y_pred):
     n_bins = NUM_AGE_BINS
-    ages = K.constant(np.arange(0, n_bins), dtype=float)
-
-    mean_age_true = K.sum(y_true * ages, axis=-1)
-    mean_age_pred = K.sum(y_pred * ages, axis=-1)
-
-    mean_loss = K.mean(K.square(mean_age_pred - mean_age_true), axis=-1)
-    softmax_loss = K.sum(K.categorical_crossentropy(y_true, y_pred, axis=-1), axis=-1)
-    variance_loss = K.mean(K.sum(K.square(y_pred * ages - ages) * y_pred, axis=-1), axis=-1)
+    mean_age_true = K.sum(y_true * K.arange(0, n_bins, dtype="float32"), axis=-1)
+    mean_age_pred = K.sum(y_pred * K.arange(0, n_bins, dtype="float32"), axis=-1)
     
-    total_loss = mean_loss + softmax_loss + variance_loss
+    repeat = K.repeat(K.reshape(mean_age_pred, (-1, 1)), n_bins)
+    repeat = K.reshape(repeat, (-1, n_bins))
+    
+    mean_loss = K.square(mean_age_pred - mean_age_true)
+    
+    variance_loss = K.sum(K.square(repeat - K.arange(0, n_bins, dtype="float32"))*y_pred, axis=1)
+    
+    softmax_loss = K.categorical_crossentropy(y_true, y_pred, from_logits=False)
+    
+    alpha=0.7
+    
+    total_loss = alpha*K.mean(mean_loss/n_bins, axis=-1) + (1-alpha)*K.mean(variance_loss, axis=-1) + K.mean(softmax_loss, axis=-1) # scale by 1/n_bins to be in the same scale
+    
+#     print("ages = {}".format(ages.eval()))
+#     print("mean_age_true = {}".format(mean_age_true.eval()))
+#     print("mean_age_pred = {}".format(mean_age_pred.eval()))
+    
+#     print("============================")
+#     print("mean_loss = {}".format(mean_loss.eval()))
+#     print("variance_loss = {}".format(variance_loss.eval()))
+#     print("softmax_loss = {}".format(softmax_loss.eval()))
+    
+#     print("============================")
+#     print("mean_loss_l2norm = {}".format(mean_loss_l2norm.eval()))
+#     print("variance_loss_l2norm = {}".format(variance_loss_l2norm.eval()))
+#     print("softmax_loss_l2norm = {}".format(softmax_loss_l2norm.eval()))
+    
+#     print("============================")
+#     print("total_loss = {}".format(total_loss.eval()))
+    
     return total_loss
 
 
