@@ -92,7 +92,7 @@ def main():
         image_size = 224
     elif model_name == "InceptionResNetV2" or model_name == "InceptionV3":
         image_size = 299
-        
+
     # Initialize generator
     train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
     val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
@@ -117,7 +117,7 @@ def main():
 
     # Initialize tensorboard logging callback
     dt_now = datetime.now().strftime("%Y%m%d-%H%M%S")
-    logdir = output_dir.joinpath("logs/scalars/{}".format(dt_now))
+    logdir = output_dir.joinpath("logs/scalars/{}-{}".format(model_name, dt_now))
     logdir = Path(__file__).resolve().parent.joinpath(logdir)
     logdir.mkdir(parents=True, exist_ok=True)
 
