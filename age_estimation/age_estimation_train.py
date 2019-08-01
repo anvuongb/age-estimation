@@ -104,9 +104,9 @@ def main():
     output_dir = Path(__file__).resolve().parent.joinpath(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    weights_đir = output_dir.joinpath("weights")
-    weights_đir = Path(__file__).resolve().parent.joinpath(weights_đir)
-    weights_đir.mkdir(parents=True, exist_ok=True)
+    weights_dir = output_dir.joinpath("weights")
+    weights_dir = Path(__file__).resolve().parent.joinpath(weights_dir)
+    weights_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize tensorboard logging callback
     dt_now = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -118,7 +118,7 @@ def main():
 
     # Initialize callbacks
     callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
-                 ModelCheckpoint(str(weights_đir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                 ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
                                  monitor="val_age_mae",
                                  verbose=1,
                                  save_best_only=True,
