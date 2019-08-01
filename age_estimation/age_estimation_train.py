@@ -96,7 +96,7 @@ def main():
     # Get model
     model = get_model(model_name=model_name)
     opt = get_optimizer(opt_name, lr)
-    model.compile(optimizer=opt, loss=mean_variance_loss, metrics=[age_mae])
+    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
 
     # Create output directory
@@ -104,7 +104,8 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize tensorboard logging callback
-    logdir=os.path.join(output_dir, "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S"))
+    dt_now = datetime.now().strftime("%Y%m%d-%H%M%S")
+    logdir=os.path.join(output_dir, "logs/scalars/" + dt_now)
     logdir = Path(__file__).resolve().parent.joinpath(logdir)
     logdir.mkdir(parents=True, exist_ok=True)
 
@@ -112,7 +113,7 @@ def main():
 
     # Initialize callbacks
     callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
-                 ModelCheckpoint(str(output_dir) + "/weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}.hdf5",
+                 ModelCheckpoint(str(output_dir) + "/weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
                                  monitor="val_age_mae",
                                  verbose=1,
                                  save_best_only=True,
