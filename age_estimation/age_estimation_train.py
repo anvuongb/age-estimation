@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
 import numpy as np
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
-from keras.optimizers import SGD, Adam
+import tensorflow as tf
+from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
+from tensorflow.keras.optimizers import SGD, Adam
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
