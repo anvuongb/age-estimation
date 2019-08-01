@@ -95,9 +95,9 @@ def main():
 
     # Get model
     model = get_model(model_name=model_name)
+    # model = load_model("../inceptionv3_appa_real_output/weights.007-4.439-11.659.hdf5", custom_objects={'age_mae':age_mae})
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
-    # model = load_model("../inceptionv3_appa_real_output/weights.007-4.439-11.659.hdf5", custom_objects={'age_mae':age_mae})
     model.summary()
 
     # Create output directory
