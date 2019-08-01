@@ -35,6 +35,8 @@ def get_args():
                         help="optimizer name; 'sgd' or 'adam'")
     parser.add_argument("--model-name", type=str, default="ResNet50",
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
+    parser.add_argument("--weight-file", type=str, 
+                        help="continue to train from a pretrained model")
     parser.add_argument("--log-freq", type=int, default=2000,
                         help="tensorboard log every x number of instances")
     parser.add_argument("--gpu", type=int, default=0,
@@ -83,19 +85,24 @@ def main():
     opt_name = args.opt
     output_dir = args.output_dir
 
+    weight_file = args.weight_file
+
     # Initialize model input size
     if model_name == "ResNet50":
         image_size = 224
     elif model_name == "InceptionResNetV2" or model_name == "InceptionV3":
         image_size = 299
-
+        
     # Initialize generator
     train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
     val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
     model = get_model(model_name=model_name)
-    # model = load_model("../inceptionv3_appa_real_output/weights.007-4.439-11.659.hdf5", custom_objects={'age_mae':age_mae})
+
+    if weight_file is not None:
+        model.load_weights(weight_file)
+
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
