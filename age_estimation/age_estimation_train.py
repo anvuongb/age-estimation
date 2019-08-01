@@ -21,7 +21,7 @@ def get_args():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--meta-train-csv", type=str, required=True,
                         help="path to the train dataset csv")
-    parser.add_argument("--meta-test-csv", type=str, required=True,
+    parser.add_argument("--meta-val-csv", type=str, required=True,
                         help="path to the test dataset csv")
     parser.add_argument("--output-dir", type=str, default="training_output",
                         help="output directory, both history and checkpoints")
@@ -75,7 +75,7 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
 
     meta_train_csv = args.meta_train_csv
-    meta_test_csv = args.meta_test_csv
+    meta_val_csv = args.meta_val_csv
     model_name = args.model_name
     batch_size = args.batch_size
     nb_epochs = args.nb_epochs
@@ -91,7 +91,7 @@ def main():
 
     # Initialize generator
     train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
-    val_gen = FaceValGenerator(meta_test_csv, batch_size=batch_size, image_size=image_size)
+    val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
     model = get_model(model_name=model_name)
@@ -132,7 +132,7 @@ def main():
                                verbose=1,
                                callbacks=callbacks)
 
-    np.savez(str(output_dir.joinpath("history.npz")), history=hist.history)
+    # np.savez(str(output_dir.joinpath("history.npz")), history=hist.history)
 
 
 if __name__ == '__main__':
