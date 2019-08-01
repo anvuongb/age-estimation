@@ -1,8 +1,8 @@
 import better_exceptions
-from tensorflow.keras.applications import ResNet50, InceptionResNetV2, InceptionV3
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Model
-from tensorflow.keras import backend as K
+from keras.applications import ResNet50, InceptionResNetV2, InceptionV3
+from keras.layers import Dense
+from keras.models import Model
+from keras import backend as K
 import numpy as np
 
 # CHANGE NUM_AGE_BINS ACCORDINGLY
