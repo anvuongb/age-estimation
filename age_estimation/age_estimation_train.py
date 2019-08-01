@@ -1,10 +1,12 @@
 import argparse
 from pathlib import Path
 import numpy as np
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
+from datetime import datetime
+import os
 
 
 ###########################################################
@@ -21,8 +23,8 @@ def get_args():
                         help="path to the train dataset csv")
     parser.add_argument("--meta-test-csv", type=str, required=True,
                         help="path to the test dataset csv")
-    parser.add_argument("--output-dir", type=str, default="checkpoints",
-                        help="checkpoint dir")
+    parser.add_argument("--output-dir", type=str, default="training_output",
+                        help="output directory, both history and checkpoints")
     parser.add_argument("--batch-size", type=int, default=32,
                         help="batch size")
     parser.add_argument("--nb-epochs", type=int, default=30,
@@ -33,6 +35,8 @@ def get_args():
                         help="optimizer name; 'sgd' or 'adam'")
     parser.add_argument("--model-name", type=str, default="ResNet50",
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
+    parser.add_argument("--log-freq", type=int, default=2000,
+                        help="tensorboard log every x number of instances")
     args = parser.parse_args()
     return args
 
@@ -70,26 +74,43 @@ def main():
     nb_epochs = args.nb_epochs
     lr = args.lr
     opt_name = args.opt
+    output_dir = args.output_dir
 
+    # Initialize model input size
     if model_name == "ResNet50":
         image_size = 224
-    elif model_name == "InceptionResNetV2":
+    elif model_name == "InceptionResNetV2" or model_name == "InceptionV3":
         image_size = 299
 
+    # Initialize generator
     train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
     val_gen = FaceValGenerator(meta_test_csv, batch_size=batch_size, image_size=image_size)
+
+    # Get model
     model = get_model(model_name=model_name)
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss=mean_variance_loss, metrics=[age_mae])
     model.summary()
-    output_dir = Path(__file__).resolve().parent.joinpath(args.output_dir)
+
+    # Create output directory
+    output_dir = Path(__file__).resolve().parent.joinpath(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize tensorboard logging callback
+    logdir=os.path.join(output_dir, "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S"))
+    logdir = Path(__file__).resolve().parent.joinpath(logdir)
+    logdir.mkdir(parents=True, exist_ok=True)
+
+    tensorboard_callback = TensorBoard(log_dir=logdir, update_freq=2000)
+
+    # Initialize callbacks
     callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
                  ModelCheckpoint(str(output_dir) + "/weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}.hdf5",
                                  monitor="val_age_mae",
                                  verbose=1,
                                  save_best_only=True,
-                                 mode="min")
+                                 mode="min"),
+                 tensorboard_callback
                  ]
 
     hist = model.fit_generator(generator=train_gen,

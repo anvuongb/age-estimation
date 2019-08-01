@@ -38,7 +38,6 @@ def mean_loss(y_true, y_pred):
     mean_age_pred = K.sum(y_pred * K.arange(0, n_bins, dtype="float32"), axis=-1)
     
     mean_loss = K.square(mean_age_pred - mean_age_true)
-    mean_loss_l2norm = tf.nn.l2_normalize(mean_loss)
     
     return K.mean(mean_loss, axis=-1)
 
@@ -50,8 +49,7 @@ def variance_loss(y_true, y_pred):
     repeat = K.repeat(K.reshape(mean_age_pred, (-1, 1)), n_bins)
     repeat = K.reshape(repeat, (-1, n_bins))
     
-    variance_loss = K.sum(K.square(repeat - ages)*y_pred, axis=1)
-    variance_loss_l2norm = tf.nn.l2_normalize(variance_loss)
+    variance_loss = K.sum(K.square(repeat - K.arange(0, n_bins, dtype="float32"))*y_pred, axis=1)
     
     return K.mean(variance_loss, axis=-1) 
 
