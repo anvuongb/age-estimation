@@ -13,7 +13,30 @@ import matplotlib.pyplot as plt
 from model import get_model
 from generator import FaceValGenerator
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", help="path to input csv", required=True)
+    parser.add_argument("--output", help="path to output csv", required=True)
+    parser.add_argument("--model", help="model name: ResNet50 or InceptionResNetV2 or InceptionV3", required=True)
+    parser.add_argument("--batch-size" ,help="batch size for batch prediction", required=False, type=int, default=32)
+    parser.add_argument("--gpu", type=int, default=0, help="gpu to train on")
+
+    args = parser.parse_args()
+    return args
+
 def main(input_csv_path, output_pkl_path, model_name, batch_size):
+
+    args = get_args()
+
+    print("Prediction will be done on GPU {}".format(args.gpu))
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+    os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
+
+    input_csv_path = args.input
+    output_pkl_path = args.output
+    model_name = args.model
+    batch_size = args.batch_size
+
     # Load age predictor
     if model_name == 'InceptionResNetV2':
         # path to trained InceptionResNetV2
@@ -51,11 +74,4 @@ def main(input_csv_path, output_pkl_path, model_name, batch_size):
     output_df.to_pickle(output_pkl_path, protocol=2)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input", help="path to input csv", required=True)
-    parser.add_argument("--output", help="path to output csv", required=True)
-    parser.add_argument("--model", help="model name: ResNet50 or InceptionResNetV2 or InceptionV3", required=True)
-    parser.add_argument("--batch-size" ,help="batch size for batch prediction", required=False, type=int, default=32)
-
-    args = parser.parse_args()
-    main(args.input, args.output, args.model, args.batch_size)
+    main()

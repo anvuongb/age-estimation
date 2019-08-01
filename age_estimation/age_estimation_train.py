@@ -108,7 +108,7 @@ def main():
     logdir = Path(__file__).resolve().parent.joinpath(logdir)
     logdir.mkdir(parents=True, exist_ok=True)
 
-    tensorboard_callback = TensorBoard(log_dir=logdir, update_freq=2000)
+    tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=2000)
 
     # Initialize callbacks
     callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
