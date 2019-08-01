@@ -84,6 +84,7 @@ def main():
     lr = args.lr
     opt_name = args.opt
     output_dir = args.output_dir
+    log_freq = args.log_freq
 
     weight_file = args.weight_file
 
@@ -121,7 +122,7 @@ def main():
     logdir = Path(__file__).resolve().parent.joinpath(logdir)
     logdir.mkdir(parents=True, exist_ok=True)
 
-    tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=2000)
+    tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=log_freq)
 
     # Initialize callbacks
     callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
