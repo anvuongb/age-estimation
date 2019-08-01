@@ -37,6 +37,8 @@ def get_args():
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
     parser.add_argument("--log-freq", type=int, default=2000,
                         help="tensorboard log every x number of instances")
+    parser.add_argument("--gpu", type=int, default=0,
+                        help="gpu to train on")                   
     args = parser.parse_args()
     return args
 
@@ -67,6 +69,11 @@ def get_optimizer(opt_name, lr):
 
 def main():
     args = get_args()
+
+    print("Training will be done on GPU {}".format(args.gpu))
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+    os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
+
     meta_train_csv = args.meta_train_csv
     meta_test_csv = args.meta_test_csv
     model_name = args.model_name
