@@ -40,7 +40,11 @@ def get_args():
     parser.add_argument("--log-freq", type=int, default=2000,
                         help="tensorboard log every x number of instances")
     parser.add_argument("--gpu", type=int, default=0,
-                        help="gpu to train on")                   
+                        help="gpu to train on") 
+    parser.add_argument("--num-workers", type=int, default=1,
+                        help="number of cpu threads for generating batches")
+    parser.add_argument("--queue-size", type=int, default=10,
+                        help="number of batches prepared in advance")                                              
     args = parser.parse_args()
     return args
 
@@ -87,6 +91,8 @@ def main():
     opt_name = args.opt
     output_dir = args.output_dir
     log_freq = args.log_freq
+    num_workers = args.num_workers
+    max_queue_size = args.queue_size
 
     weight_file = args.weight_file
 
@@ -145,11 +151,23 @@ def main():
                     tensorboard_callback
                     ]
 
-    hist = model.fit_generator(generator=train_gen,
+    if num_workers > 1:
+        model.fit_generator(generator=train_gen,
                                epochs=nb_epochs,
                                validation_data=val_gen,
                                verbose=1,
-                               callbacks=callbacks)
+                               callbacks=callbacks,
+                               use_multiprocessing=True,
+                               workers=num_workers,
+                               max_queue_size=max_queue_size)
+    elif num_workers==1:
+        model.fit_generator(generator=train_gen,
+                               epochs=nb_epochs,
+                               validation_data=val_gen,
+                               verbose=1,
+                               callbacks=callbacks,
+                               max_queue_size=max_queue_size)
+    
 
     # np.savez(str(output_dir.joinpath("history.npz")), history=hist.history)
 
