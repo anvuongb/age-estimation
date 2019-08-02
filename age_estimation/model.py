@@ -36,6 +36,7 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
     model = Model(inputs=base_model.input, outputs=prediction)
 
     return model
+    
 def mean_loss(y_true, y_pred):
     n_bins = NUM_AGE_BINS
     mean_age_true = K.sum(y_true * K.arange(0, n_bins, dtype="float32"), axis=-1)

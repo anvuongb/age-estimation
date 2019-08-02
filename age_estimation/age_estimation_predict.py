@@ -24,7 +24,7 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def main(input_csv_path, output_pkl_path, model_name, batch_size):
+def main():
 
     args = get_args()
 
