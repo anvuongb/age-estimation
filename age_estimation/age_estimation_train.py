@@ -93,7 +93,7 @@ def main():
     # Initialize model input size
     if model_name == "ResNet50":
         image_size = 224
-    elif model_name == "InceptionResNetV2" or model_name == "InceptionV3":
+    elif model_name == "InceptionResNetV2" or model_name == "InceptionV3" or model_name =="SEInceptionV3":
         image_size = 299
 
     # Initialize generator
