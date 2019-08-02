@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import numpy as np
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD, Adam, Adadelta
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
@@ -32,7 +32,7 @@ def get_args():
     parser.add_argument("--lr", type=float, default=0.1,
                         help="learning rate")
     parser.add_argument("--opt", type=str, default="sgd",
-                        help="optimizer name; 'sgd' or 'adam'")
+                        help="optimizer name; 'sgd' or 'adam' or 'adadelta")
     parser.add_argument("--model-name", type=str, default="ResNet50",
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
     parser.add_argument("--weight-file", type=str, 
@@ -65,8 +65,10 @@ def get_optimizer(opt_name, lr):
         return SGD(lr=lr, momentum=0.9, nesterov=True)
     elif opt_name == "adam":
         return Adam(lr=lr)
+    elif opt_name == "adadelta":
+        return Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
     else:
-        raise ValueError("optimizer name should be 'sgd' or 'adam'")
+        raise ValueError("optimizer name should be 'sgd' or 'adam' or 'adadelta")
 
 
 def main():
@@ -118,21 +120,30 @@ def main():
 
     # Initialize tensorboard logging callback
     dt_now = datetime.now().strftime("%Y%m%d-%H%M%S")
-    logdir = output_dir.joinpath("logs/scalars/{}-{}".format(model_name, dt_now))
+    logdir = output_dir.joinpath("logs/scalars/{}-{}-{}".format(model_name, opt_name, dt_now))
     logdir = Path(__file__).resolve().parent.joinpath(logdir)
     logdir.mkdir(parents=True, exist_ok=True)
 
     tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=log_freq)
 
     # Initialize callbacks
-    callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
-                 ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
-                                 monitor="val_age_mae",
-                                 verbose=1,
-                                 save_best_only=True,
-                                 mode="min"),
-                 tensorboard_callback
-                 ]
+    if opt_name is not 'adadelta':
+        callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
+                    ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                    monitor="val_age_mae",
+                                    verbose=1,
+                                    save_best_only=True,
+                                    mode="min"),
+                    tensorboard_callback
+                    ]
+    else:
+        callbacks = [ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                    monitor="val_age_mae",
+                                    verbose=1,
+                                    save_best_only=True,
+                                    mode="min"),
+                    tensorboard_callback
+                    ]
 
     hist = model.fit_generator(generator=train_gen,
                                epochs=nb_epochs,
