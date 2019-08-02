@@ -5,6 +5,8 @@ from keras.models import Model
 from keras import backend as K
 import numpy as np
 
+from SE_InceptionV3_keras import SEInceptionV3
+
 # CHANGE NUM_AGE_BINS ACCORDINGLY
 
 NUM_AGE_BINS = 70
@@ -25,6 +27,8 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
         base_model = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
     elif model_name == "InceptionV3":
         base_model = InceptionV3(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
+    elif model_name == "SEInceptionV3":
+        base_model = SEInceptionV3(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
 
     prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
                        name="pred_age")(base_model.output)
