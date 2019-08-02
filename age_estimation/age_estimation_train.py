@@ -34,7 +34,7 @@ def get_args():
     parser.add_argument("--opt", type=str, default="sgd",
                         help="optimizer name; 'sgd' or 'adam' or 'adadelta")
     parser.add_argument("--model-name", type=str, default="ResNet50",
-                        help="model name: ResNet50 or InceptionResNetV2 or InceptionV3")
+                        help="model name: ResNet50 or InceptionResNetV2 or InceptionV3 or SEInceptionV3")
     parser.add_argument("--weight-file", type=str, 
                         help="continue to train from a pretrained model")
     parser.add_argument("--log-freq", type=int, default=2000,
