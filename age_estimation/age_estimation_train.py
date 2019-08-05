@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, Adadelta
+from keras.utils import multi_gpu_model
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
@@ -39,12 +40,14 @@ def get_args():
                         help="continue to train from a pretrained model")
     parser.add_argument("--log-freq", type=int, default=2000,
                         help="tensorboard log every x number of instances")
-    parser.add_argument("--gpu", type=int, default=0,
+    parser.add_argument("--gpu", type=str, default="0",
                         help="gpu to train on") 
     parser.add_argument("--num-workers", type=int, default=1,
                         help="number of cpu threads for generating batches")
     parser.add_argument("--queue-size", type=int, default=10,
-                        help="number of batches prepared in advance")                                              
+                        help="number of batches prepared in advance")
+    parser.add_argument("--fp16", type=int, default=0,
+                        help="use mixed precision, may lead to undesired results")                                                   
     args = parser.parse_args()
     return args
 
@@ -96,6 +99,10 @@ def main():
 
     weight_file = args.weight_file
 
+    if args.fp16 == 1:
+        print("TF_ENABLE_AUTO_MIXED_PRECISION set to 1")
+        os.environ["TF_ENABLE_AUTO_MIXED_PRECISION"] = "1"
+
     # Initialize model input size
     if model_name == "ResNet50":
         image_size = 224
@@ -113,8 +120,9 @@ def main():
         model.load_weights(weight_file)
 
     opt = get_optimizer(opt_name, lr)
-    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
-    model.summary()
+    md_model = multi_gpu_model(model, gpus=len(args.gpu.split(',')))
+    md_model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
+    md_model.summary()
 
     # Create output directory
     output_dir = Path(__file__).resolve().parent.joinpath(output_dir)
@@ -152,7 +160,7 @@ def main():
                     ]
 
     if num_workers > 1:
-        model.fit_generator(generator=train_gen,
+        md_model.fit_generator(generator=train_gen,
                                epochs=nb_epochs,
                                validation_data=val_gen,
                                verbose=1,
@@ -161,7 +169,7 @@ def main():
                                workers=num_workers,
                                max_queue_size=max_queue_size)
     elif num_workers==1:
-        model.fit_generator(generator=train_gen,
+        md_model.fit_generator(generator=train_gen,
                                epochs=nb_epochs,
                                validation_data=val_gen,
                                verbose=1,
