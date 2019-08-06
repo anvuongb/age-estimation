@@ -122,14 +122,14 @@ class FaceValGenerator(Sequence):
             self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
 
 class FacePredictGenerator(Sequence):
-    # this function only take "img_path" columng
+    # this function only take "img_path" column
     def __init__(self, meta_csv_path, path_col="img_path", batch_size=32, image_size=224):
         self.image_path_and_age = []
-        self._load_meta_csv(meta_csv_path)
-        self.image_num = len(self.image_path_and_age)
         self.batch_size = batch_size
         self.image_size = image_size
         self.path_col = path_col
+        self._load_meta_csv(meta_csv_path)
+        self.image_num = len(self.image_path_and_age)
 
     def __len__(self):
         return int(np.ceil(self.image_num/self.batch_size))
