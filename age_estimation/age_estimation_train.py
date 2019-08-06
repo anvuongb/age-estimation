@@ -3,6 +3,9 @@ from pathlib import Path
 import numpy as np
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, Adadelta
+from keras import backend as K
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
@@ -44,7 +47,9 @@ def get_args():
     parser.add_argument("--num-workers", type=int, default=1,
                         help="number of cpu threads for generating batches")
     parser.add_argument("--queue-size", type=int, default=10,
-                        help="number of batches prepared in advance")                                              
+                        help="number of batches prepared in advance")
+    parser.add_argument("--gpu-frac", type=float, default=1.0,
+                        help="fraction of gpu memory to allocate")                                              
     args = parser.parse_args()
     return args
 
@@ -95,6 +100,11 @@ def main():
     max_queue_size = args.queue_size
 
     weight_file = args.weight_file
+
+    # set session GPU memory
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = args.gpu_frac
+    set_session(tf.Session(config=config))
 
     # Initialize model input size
     if model_name == "ResNet50":
