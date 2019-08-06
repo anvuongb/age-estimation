@@ -11,7 +11,7 @@ from keras import backend as K
 import matplotlib.pyplot as plt
 
 from model import get_model
-from generator import FaceValGenerator
+from generator import FacePredictGenerator
 
 ######################################
 # MODEL         OUTPUT_DIMS          #
@@ -58,7 +58,7 @@ def main():
     # Prediction data generator
     start = time.time()
     print('start prediction')
-    pred_gen = FaceValGenerator(input_csv_path, batch_size=batch_size, image_size=image_size, version=version)
+    pred_gen = FacePredictGenerator(input_csv_path, batch_size=batch_size, image_size=image_size, version=version)
     predictions = model.predict_generator(pred_gen)
     end = time.time()
     print('prediction took {:.4f}s\n'.format(end-start))

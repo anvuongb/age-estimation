@@ -18,8 +18,9 @@ from keras.preprocessing import image
 # abs_path_2                                              #
 ###########################################################
 
-class FaceValGenerator(Sequence):
-    def __init__(self, meta_csv_path, batch_size=32, image_size=224, version=2):
+class FacePredictGenerator(Sequence):
+    def __init__(self, meta_csv_path, path_col="img_path", batch_size=32, image_size=224, version=2):
+        self.path_col = path_col
         self.image_path_and_age = []
         self._load_meta_csv(meta_csv_path)
         self.image_num = len(self.image_path_and_age)
@@ -51,7 +52,7 @@ class FaceValGenerator(Sequence):
         meta_csv = pd.read_csv(meta_csv_path)
 
         for idx, row in meta_csv.iterrows():
-            self.image_path_and_age.append(str(row["img_path"]))
+            self.image_path_and_age.append(str(row[self.path_col]))
     
     def _load_and_preprocess(self, img_path, target_size, version):
         # version 1 for vgg
