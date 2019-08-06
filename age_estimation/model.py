@@ -18,17 +18,17 @@ def age_mae(y_true, y_pred):
     mae = K.mean(K.abs(true_age - pred_age))
     return mae
 
-def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS):
+def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet'):
     base_model = None
 
     if model_name == "ResNet50":
-        base_model = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3), pooling="avg")
+        base_model = ResNet50(include_top=False, weights=weights, input_shape=(224, 224, 3), pooling="avg")
     elif model_name == "InceptionResNetV2":
-        base_model = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
+        base_model = InceptionResNetV2(include_top=False, weights=weights, input_shape=(299, 299, 3), pooling="avg")
     elif model_name == "InceptionV3":
-        base_model = InceptionV3(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
+        base_model = InceptionV3(include_top=False, weights=weights, input_shape=(299, 299, 3), pooling="avg")
     elif model_name == "SEInceptionV3":
-        base_model = SEInceptionV3(include_top=False, weights='imagenet', input_shape=(299, 299, 3), pooling="avg")
+        base_model = SEInceptionV3(include_top=False, weights=weights, input_shape=(299, 299, 3), pooling="avg")
 
     prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
                        name="pred_age")(base_model.output)
