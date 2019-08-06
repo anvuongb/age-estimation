@@ -20,6 +20,8 @@ from generator import FacePredictGenerator
 # SENET50       2048                 #
 ######################################
 
+## https://github.com/rcmalli/keras-vggface
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", help="path to input csv", required=True)
