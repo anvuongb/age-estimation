@@ -121,4 +121,40 @@ class FaceValGenerator(Sequence):
         for idx, row in meta_csv.iterrows():
             self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
 
+class FacePredictGenerator(Sequence):
+    # this function only take "img_path" columng
+    def __init__(self, meta_csv_path, path_col="img_path", batch_size=32, image_size=224):
+        self.image_path_and_age = []
+        self._load_meta_csv(meta_csv_path)
+        self.image_num = len(self.image_path_and_age)
+        self.batch_size = batch_size
+        self.image_size = image_size
+        self.path_col = path_col
+
+    def __len__(self):
+        return int(np.ceil(self.image_num/self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_size = self.batch_size
+        image_size = self.image_size
+        
+        idx_min = idx*batch_size
+        idx_max = min(idx_min + batch_size, len(self.image_path_and_age))
+
+        current_batch_size = idx_max - idx_min
+
+        x = np.zeros((current_batch_size, image_size, image_size, 3), dtype=np.uint8)
+
+        for i, image_path in enumerate(self.image_path_and_age[idx_min:idx_max]):
+            image = cv2.imread(str(image_path))
+            x[i] = cv2.resize(image, (image_size, image_size))
+
+        return x
+
+    def _load_meta_csv(self, meta_csv_path):
+        meta_csv = pd.read_csv(meta_csv_path)
+
+        for idx, row in meta_csv.iterrows():
+            self.image_path_and_age.append(str(row[self.path_col]))
+
     

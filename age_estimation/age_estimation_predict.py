@@ -11,7 +11,7 @@ from keras import backend as K
 import matplotlib.pyplot as plt
 
 from model import get_model
-from generator import FaceValGenerator
+from generator import FacePredictGenerator
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -61,8 +61,9 @@ def main():
     # Prediction data generator
     start = time.time()
     print('start prediction')
-    pred_gen = FaceValGenerator(input_csv_path, batch_size=batch_size, image_size=image_size)
-    predictions = model.predict_generator(pred_gen)
+    pred_gen = FacePredictGenerator(input_csv_path, path_col="img_path",
+                                    batch_size=batch_size, image_size=image_size)
+    predictions = model.predict_generator(pred_gen, verbose=1)
     end = time.time()
     print('prediction took {:.4f}s\n'.format(end-start))
     
