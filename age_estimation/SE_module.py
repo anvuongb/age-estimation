@@ -1,5 +1,5 @@
-from keras.layers import GlobalAveragePooling2D, Reshape, Dense, multiply, add, Permute, Conv2D
-from keras import backend as K
+from tensorflow.keras.layers import GlobalAveragePooling2D, Reshape, Dense, multiply, add, Permute, Conv2D
+import tensorflow.keras.backend as K
 
 
 def squeeze_excite_block(input, ratio=16):
@@ -13,7 +13,8 @@ def squeeze_excite_block(input, ratio=16):
     '''
     init = input
     channel_axis = 1 if K.image_data_format() == "channels_first" else -1
-    filters = init._keras_shape[channel_axis]
+    # filters = init._keras_shape[channel_axis]
+    filters = K.int_shape(init)[channel_axis]
     se_shape = (1, 1, filters)
 
     se = GlobalAveragePooling2D()(init)

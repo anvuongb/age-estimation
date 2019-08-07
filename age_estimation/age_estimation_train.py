@@ -1,15 +1,18 @@
 import argparse
 from pathlib import Path
 import numpy as np
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
-from keras.optimizers import SGD, Adam, Adadelta
-from keras import backend as K
-from keras.backend.tensorflow_backend import set_session
+import os
+
+# os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
+from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
+from tensorflow.keras.optimizers import SGD, Adam, Adadelta
+import tensorflow.keras.backend as K
 import tensorflow as tf
 from generator import FaceGenerator, FaceValGenerator
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
-import os
+
 
 
 ###########################################################
@@ -111,7 +114,7 @@ def main():
     # set session GPU memory
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = args.gpu_frac
-    set_session(tf.Session(config=config))
+    K.set_session(tf.Session(config=config))
 
     # Initialize model input size
     if model_name == "ResNet50":

@@ -1,8 +1,8 @@
 import better_exceptions
-from keras.applications import ResNet50, InceptionResNetV2, InceptionV3
-from keras.layers import Dense
-from keras.models import Model
-from keras import backend as K
+from tensorflow.keras.applications import ResNet50, InceptionResNetV2, InceptionV3
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Model
+import tensorflow.keras.backend as K
 import numpy as np
 
 from SE_InceptionV3_keras import SEInceptionV3
