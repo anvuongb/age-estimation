@@ -49,7 +49,9 @@ def get_args():
     parser.add_argument("--queue-size", type=int, default=10,
                         help="number of batches prepared in advance")
     parser.add_argument("--gpu-frac", type=float, default=1.0,
-                        help="fraction of gpu memory to allocate")                                              
+                        help="fraction of gpu memory to allocate")
+    parser.add_argument("--provider", type=str, default="nvidia",
+                        help="use nvidia or amd gpu")                                                  
     args = parser.parse_args()
     return args
 
@@ -83,9 +85,14 @@ def get_optimizer(opt_name, lr):
 def main():
     args = get_args()
 
-    print("Training will be done on GPU {}".format(args.gpu))
-    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-    os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
+    if args.provider == "amd":
+        os.environ["HIP_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        os.environ["HIP_VISIBLE_DEVICES"]="{}".format(args.gpu)
+    elif args.provider == "nvidia":
+        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
+
+    print("Training will be done on {} GPU {}".format(args.provider, args.gpu))
 
     meta_train_csv = args.meta_train_csv
     meta_val_csv = args.meta_val_csv
