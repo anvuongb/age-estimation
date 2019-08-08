@@ -78,7 +78,7 @@ class Schedule:
 
 # This modified Scheduler fix a weird bug when keras ask for attribute 'lr'
 # instead of 'learning_rate'
-class LearningRateScheduler(tensorflow.keras.callbacks.Callback):
+class LearningRateScheduler(tf.keras.callbacks.Callback):
     """Learning rate scheduler.
     # Arguments
     schedule: a function that takes an epoch index as input
@@ -157,7 +157,7 @@ def main():
     opt = get_optimizer(opt_name, lr)
     if args.fp16 == 1:
         opt = tf.compat.v1.train.experimental.enable_mixed_precision_graph_rewrite(opt) 
-        
+
     # set session GPU memory
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = args.gpu_frac
