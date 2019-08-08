@@ -156,6 +156,8 @@ def main():
     weight_file = args.weight_file
 
     # Get optimizer
+    # This should be done before K.get_session() 
+    # in order for mixed_precision to work
     opt = get_optimizer(opt_name, lr)
     if args.fp16 == 1:
         opt = tf.compat.v1.train.experimental.enable_mixed_precision_graph_rewrite(opt) 
