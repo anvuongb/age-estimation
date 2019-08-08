@@ -26,7 +26,8 @@ def get_args():
                         help="number of cpu threads for generating batches")
     parser.add_argument("--queue-size", type=int, default=10,
                         help="number of batches prepared in advance")
-
+    parser.add_argument("--provider", type=str, default="nvidia",
+                        help="use nvidia or amd gpu")
     args = parser.parse_args()
     return args
 
@@ -34,9 +35,14 @@ def main():
 
     args = get_args()
 
+    if args.provider == "amd":
+        os.environ["HIP_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        os.environ["HIP_VISIBLE_DEVICES"]="{}".format(args.gpu)
+    elif args.provider == "nvidia":
+        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+        os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
+        
     print("Prediction will be done on GPU {}".format(args.gpu))
-    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-    os.environ["CUDA_VISIBLE_DEVICES"]="{}".format(args.gpu)
 
     input_csv_path = args.input
     output_pkl_path = args.output
