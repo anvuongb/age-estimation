@@ -205,6 +205,7 @@ def main():
                                     monitor="val_age_mae",
                                     verbose=1,
                                     save_best_only=True,
+                                    save_weights_only=True,
                                     mode="min"),
                     tensorboard_callback
                     ]
@@ -213,6 +214,7 @@ def main():
                                     monitor="val_age_mae",
                                     verbose=1,
                                     save_best_only=True,
+                                    save_weights_only=True,
                                     mode="min"),
                     tensorboard_callback
                     ]
@@ -223,7 +225,7 @@ def main():
                                validation_data=val_gen,
                                verbose=1,
                                callbacks=callbacks,
-                               use_multiprocessing=True,
+                               use_multiprocessing=False,
                                workers=num_workers,
                                max_queue_size=max_queue_size)
     elif num_workers==1:
