@@ -5,7 +5,8 @@ import os
 
 # os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
-from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+# from tensorflow.keras.callbacks import LearningRateScheduler
 from tensorflow.keras.optimizers import SGD, Adam, Adadelta
 import tensorflow.keras.backend as K
 import tensorflow as tf
@@ -75,14 +76,50 @@ class Schedule:
             return self.initial_lr * 0.04
         return self.initial_lr * 0.008
 
+# This modified Scheduler fix a weird bug when keras ask for attribute 'lr'
+# instead of 'learning_rate'
+class LearningRateScheduler(tensorflow.keras.callbacks.Callback):
+    """Learning rate scheduler.
+    # Arguments
+    schedule: a function that takes an epoch index as input
+    (integer, indexed from 0) and current learning rate
+    and returns a new learning rate as output (float).
+    verbose: int. 0: quiet, 1: update messages.
+    """
+    
+    def __init__(self, schedule, verbose=0):
+        super(LearningRateScheduler, self).__init__()
+        self.schedule = schedule
+        self.verbose = verbose
+    
+    def on_epoch_begin(self, epoch, logs=None):
+        if not hasattr(self.model.optimizer, 'learning_rate'):
+            raise ValueError('Optimizer must have a "learning_rate" attribute.')
+        learning_rate = float(K.get_value(self.model.optimizer.learning_rate))
+        try:  # new API
+            learning_rate = self.schedule(epoch, learning_rate)
+        except TypeError:  # old API for backward compatibility
+            learning_rate = self.schedule(epoch)
+        if not isinstance(learning_rate, (float, np.float32, np.float64)):
+            raise ValueError('The output of the "schedule" function '
+                                'should be float.')
+        K.set_value(self.model.optimizer.learning_rate, learning_rate)
+        if self.verbose > 0:
+            print('\nEpoch %05d: LearningRateScheduler setting learning '
+                    'rate to %s.' % (epoch + 1, learning_rate))
+    
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        logs['lr'] = K.get_value(self.model.optimizer.learning_rate)
+        
 
 def get_optimizer(opt_name, lr):
     if opt_name == "sgd":
-        return SGD(lr=lr, momentum=0.9, nesterov=True)
+        return SGD(learning_rate=lr, momentum=0.9, nesterov=True)
     elif opt_name == "adam":
-        return Adam(lr=lr)
+        return Adam(learning_rate=lr)
     elif opt_name == "adadelta":
-        return Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
+        return Adadelta(learning_rate=1.0, rho=0.95, epsilon=None, decay=0.0)
     else:
         raise ValueError("optimizer name should be 'sgd' or 'adam' or 'adadelta")
 
