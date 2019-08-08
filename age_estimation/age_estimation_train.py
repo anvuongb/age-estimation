@@ -77,7 +77,9 @@ class Schedule:
         return self.initial_lr * 0.008
 
 # This modified Scheduler fix a weird bug when keras ask for attribute 'lr'
-# instead of 'learning_rate'
+# instead of 'learning_rate'. Comment this out and use
+# from tensorflow.keras.callbacks import LearningRateScheduler
+# if it's possible for better compatibility.
 class LearningRateScheduler(tf.keras.callbacks.Callback):
     """Learning rate scheduler.
     # Arguments
