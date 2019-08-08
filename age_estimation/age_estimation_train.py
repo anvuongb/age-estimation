@@ -178,10 +178,14 @@ def main():
     val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
-    model = get_model(model_name=model_name)
-
+    # If no weight file provided, model will be init with imagenet weight
     if weight_file is not None:
+        print("Loading weight from {}".format(weight_file))
+        model = get_model(model_name=model_name, weights=None)
         model.load_weights(weight_file)
+    else:
+        print("Loading weight from imagenet")
+        model = get_model(model_name=model_name, weights='imagenet')
 
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
@@ -223,22 +227,14 @@ def main():
                     tensorboard_callback
                     ]
 
-    if num_workers > 1:
-        model.fit_generator(generator=train_gen,
-                               epochs=nb_epochs,
-                               validation_data=val_gen,
-                               verbose=1,
-                               callbacks=callbacks,
-                               use_multiprocessing=False,
-                               workers=num_workers,
-                               max_queue_size=max_queue_size)
-    elif num_workers==1:
-        model.fit_generator(generator=train_gen,
-                               epochs=nb_epochs,
-                               validation_data=val_gen,
-                               verbose=1,
-                               callbacks=callbacks,
-                               max_queue_size=max_queue_size)
+    model.fit_generator(generator=train_gen,
+                        epochs=nb_epochs,
+                        validation_data=val_gen,
+                        verbose=1,
+                        callbacks=callbacks,
+                        use_multiprocessing=False,
+                        workers=num_workers,
+                        max_queue_size=max_queue_size)
     
 
     # np.savez(str(output_dir.joinpath("history.npz")), history=hist.history)
