@@ -153,6 +153,11 @@ def main():
 
     weight_file = args.weight_file
 
+    # Get optimizer
+    opt = get_optimizer(opt_name, lr)
+    if args.fp16 == 1:
+        opt = tf.compat.v1.train.experimental.enable_mixed_precision_graph_rewrite(opt) 
+        
     # set session GPU memory
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = args.gpu_frac
@@ -174,9 +179,6 @@ def main():
     if weight_file is not None:
         model.load_weights(weight_file)
 
-    opt = get_optimizer(opt_name, lr)
-    if args.fp16 == 1:
-        opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt) 
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
 
