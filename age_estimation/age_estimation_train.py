@@ -54,7 +54,9 @@ def get_args():
     parser.add_argument("--gpu-frac", type=float, default=1.0,
                         help="fraction of gpu memory to allocate")
     parser.add_argument("--provider", type=str, default="nvidia",
-                        help="use nvidia or amd gpu")                                                  
+                        help="use nvidia or amd gpu")
+    parser.add_argument("--fp16", type=int, default=0,
+                        help="use fp16 mode provided by tensorflow")                                                     
     args = parser.parse_args()
     return args
 
@@ -87,6 +89,9 @@ def get_optimizer(opt_name, lr):
 
 def main():
     args = get_args()
+
+    if args.fp16==1:
+        os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1' 
 
     if args.provider == "amd":
         os.environ["HIP_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
@@ -133,6 +138,8 @@ def main():
         model.load_weights(weight_file)
 
     opt = get_optimizer(opt_name, lr)
+    if args.fp16 == 1:
+        opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt) 
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
 
