@@ -1,4 +1,6 @@
 # age-estimation
+
+## age_estimation
 These codes were tested on both AMD (ROCm 2.6) and Nvidia GPU (CUDA 10)
 
 All tensor operations come from tf and tf.keras, standalone keras was removed due to conflicts with `auto_mixed_precision`
@@ -8,3 +10,9 @@ Mixed precision can be enabled by setting `--fp16 1`. This option generally work
 GPU provider can be selected by setting `--provider nvidia` or `--provider amd`
 
 Network tested: ResNet50, InceptionV3, InceptionResNetV2, and SEInceptionV3
+
+## face_detection
+TODO
+
+## face_embedding
+TODO
