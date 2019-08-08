@@ -124,10 +124,13 @@ def main():
     val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
-    model = get_model(model_name=model_name)
-
     if weight_file is not None:
+        print("Loading weight from {}".format(weight_file))
+        model = get_model(model_name=model_name, weights=None)
         model.load_weights(weight_file)
+    else:
+        print("Loading weight from imagenet")
+        model = get_model(model_name=model_name, weights='imagenet')
 
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
