@@ -51,7 +51,9 @@ def get_args():
     parser.add_argument("--gpu-frac", type=float, default=1.0,
                         help="fraction of gpu memory to allocate")
     parser.add_argument("--provider", type=str, default="nvidia",
-                        help="use nvidia or amd gpu")                                                  
+                        help="use nvidia or amd gpu") 
+    parser.add_argument("--last-layer", type=int, default=0,
+                        help="train whole network or last layer only")   
     args = parser.parse_args()
     return args
 
@@ -126,11 +128,13 @@ def main():
     # Get model
     if weight_file is not None:
         print("Loading weight from {}".format(weight_file))
-        model = get_model(model_name=model_name, weights=None)
+        model = get_model(model_name=model_name, weights=None, 
+                          last_layer_only=bool(args.last_layer))
         model.load_weights(weight_file)
     else:
         print("Loading weight from imagenet")
-        model = get_model(model_name=model_name, weights='imagenet')
+        model = get_model(model_name=model_name, weights='imagenet',
+                          last_layer_only=bool(args.last_layer))
 
     opt = get_optimizer(opt_name, lr)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
