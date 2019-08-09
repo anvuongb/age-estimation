@@ -57,7 +57,9 @@ def get_args():
     parser.add_argument("--provider", type=str, default="nvidia",
                         help="use nvidia or amd gpu")
     parser.add_argument("--fp16", type=int, default=0,
-                        help="use fp16 mode provided by tensorflow")                                                     
+                        help="use fp16 mode provided by tensorflow")
+    parser.add_argument("--last-layer", type=int, default=0,
+                        help="train whole network or last layer only")                                                     
     args = parser.parse_args()
     return args
 
@@ -181,11 +183,13 @@ def main():
     # If no weight file provided, model will be init with imagenet weight
     if weight_file is not None:
         print("Loading weight from {}".format(weight_file))
-        model = get_model(model_name=model_name, weights=None)
+        model = get_model(model_name=model_name, weights=None, 
+                          last_layer_only=bool(args.last_layer))
         model.load_weights(weight_file)
     else:
         print("Loading weight from imagenet")
-        model = get_model(model_name=model_name, weights='imagenet')
+        model = get_model(model_name=model_name, weights='imagenet',
+                          last_layer_only=bool(args.last_layer))
 
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
     model.summary()
