@@ -6,7 +6,7 @@ from keras.optimizers import SGD, Adam, Adadelta
 from keras import backend as K
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
-from generator import FaceGenerator, FaceValGenerator
+from generator import FaceGenerator, FaceValGenerator, FaceGeneratorCenter, FaceValGeneratorCenter
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
 import os
@@ -54,6 +54,10 @@ def get_args():
                         help="use nvidia or amd gpu") 
     parser.add_argument("--last-layer", type=int, default=0,
                         help="train whole network or last layer only")   
+    parser.add_argument("--center-loss", type=int, default=0,
+                        help="use center loss with crossentropy")    
+    parser.add_argument("--lambda-c", type=float, default=0.2,
+                        help="lambda to adjust center loss") 
     args = parser.parse_args()
     return args
 
@@ -122,23 +126,40 @@ def main():
         image_size = 299
 
     # Initialize generator
-    train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
-    val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
-
+    if args.center_loss == 0:
+        train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
+        val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
+    elif args.center_loss == 1:
+        train_gen = FaceGeneratorCenter(meta_train_csv, batch_size=batch_size, image_size=image_size)
+        val_gen = FaceValGeneratorCenter(meta_val_csv, batch_size=batch_size, image_size=image_size)
+    
+    opt = get_optimizer(opt_name, lr)
+    
     # Get model
     if weight_file is not None:
         print("Loading weight from {}".format(weight_file))
         model = get_model(model_name=model_name, weights=None, 
-                          last_layer_only=bool(args.last_layer))
+                          last_layer_only=bool(args.last_layer),
+                          center_loss=args.center_loss)
         model.load_weights(weight_file)
     else:
         print("Loading weight from imagenet")
         model = get_model(model_name=model_name, weights='imagenet',
-                          last_layer_only=bool(args.last_layer))
+                          last_layer_only=bool(args.last_layer),
+                          center_loss=args.center_loss)
 
-    opt = get_optimizer(opt_name, lr)
-    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=[age_mae])
-    model.summary()
+    if args.center_loss == 0:
+        model.compile(optimizer=opt, 
+                      loss="categorical_crossentropy", 
+                      metrics=[age_mae])
+        model.summary()
+    elif args.center_loss == 1:
+        lambda_c = args.lambda_c
+        model.compile(optimizer=opt, 
+                      loss=["categorical_crossentropy", lambda y_true, y_pred: y_pred], 
+                      metrics=[age_mae],
+                      loss_weights=[1, lambda_c])
+        model.summary()
 
     # Create output directory
     output_dir = Path(__file__).resolve().parent.joinpath(output_dir)

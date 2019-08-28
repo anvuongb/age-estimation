@@ -38,6 +38,91 @@ def get_transform_func():
 # abs_path_2,age2                                         #
 ###########################################################
 
+class FaceGeneratorCenter(Sequence):
+    def __init__(self, meta_csv_path, batch_size=32, image_size=224):
+        self.image_path_and_age = []
+        self._load_meta_csv(meta_csv_path)
+
+        self.image_num = len(self.image_path_and_age)
+        self.batch_size = batch_size
+        self.image_size = image_size
+        self.indices = np.random.permutation(self.image_num)
+        self.transform_image = get_transform_func()
+
+    def __len__(self):
+        return int(np.ceil(self.image_num/self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_size = self.batch_size
+        image_size = self.image_size
+
+        idx_min = idx*batch_size
+        idx_max = min(idx_min + batch_size, len(self.image_path_and_age))
+
+        current_batch_size = idx_max - idx_min
+
+        x = np.zeros((current_batch_size, image_size, image_size, 3), dtype=np.uint8)
+        y = np.zeros((current_batch_size, 1), dtype=np.int32)
+
+        sample_indices = self.indices[idx_min:idx_max]
+
+        for i, sample_id in enumerate(sample_indices):
+            image_path, age = self.image_path_and_age[sample_id]
+            image = cv2.imread(str(image_path))
+            x[i] = self.transform_image(cv2.resize(image, (image_size, image_size)))
+            age += math.floor(np.random.randn() * 2 + 0.5)
+            y[i] = np.clip(age, 0, 69)
+
+        random_y = np.random.rand(len(sample_indices), 1)
+        return [x, y], [to_categorical(y, 70), random_y]
+
+    def on_epoch_end(self):
+        self.indices = np.random.permutation(self.image_num)
+
+    def _load_meta_csv(self, meta_csv_path):
+        meta_csv = pd.read_csv(meta_csv_path)
+
+        for idx, row in meta_csv.iterrows():
+            self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
+
+
+class FaceValGeneratorCenter(Sequence):
+    def __init__(self, meta_csv_path, batch_size=32, image_size=224):
+        self.image_path_and_age = []
+        self._load_meta_csv(meta_csv_path)
+        self.image_num = len(self.image_path_and_age)
+        self.batch_size = batch_size
+        self.image_size = image_size
+
+    def __len__(self):
+        return int(np.ceil(self.image_num/self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_size = self.batch_size
+        image_size = self.image_size
+        
+        idx_min = idx*batch_size
+        idx_max = min(idx_min + batch_size, len(self.image_path_and_age))
+
+        current_batch_size = idx_max - idx_min
+
+        x = np.zeros((current_batch_size, image_size, image_size, 3), dtype=np.uint8)
+        y = np.zeros((current_batch_size, 1), dtype=np.int32)
+
+        for i, (image_path, age) in enumerate(self.image_path_and_age[idx_min:idx_max]):
+            image = cv2.imread(str(image_path))
+            x[i] = cv2.resize(image, (image_size, image_size))
+            y[i] = age
+
+        random_y = np.random.rand(current_batch_size, 1)
+        return [x, y], [to_categorical(y, 70), random_y]
+
+    def _load_meta_csv(self, meta_csv_path):
+        meta_csv = pd.read_csv(meta_csv_path)
+
+        for idx, row in meta_csv.iterrows():
+            self.image_path_and_age.append([str(row["img_path"]), int(row["age"])])
+
 class FaceGenerator(Sequence):
     def __init__(self, meta_csv_path, batch_size=32, image_size=224):
         self.image_path_and_age = []

@@ -1,6 +1,6 @@
 import better_exceptions
 from keras.applications import ResNet50, InceptionResNetV2, InceptionV3
-from keras.layers import Dense
+from keras.layers import Dense, Softmax, Input, Embedding, Lambda
 from keras.models import Model
 from keras import backend as K
 import numpy as np
@@ -18,7 +18,7 @@ def age_mae(y_true, y_pred):
     mae = K.mean(K.abs(true_age - pred_age))
     return mae
 
-def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', last_layer_only=False):
+def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', last_layer_only=False, center_loss=False):
     base_model = None
 
     if model_name == "ResNet50":
@@ -34,10 +34,22 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', la
         for layer in base_model.layers:
             layer.trainable=False
 
-    prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
-                       name="pred_age")(base_model.output)
+    if center_loss is False:
+        prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
+                        name="pred_age")(base_model.output)
+        model = Model(inputs=base_model.input, outputs=prediction)
+    else:
+        fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
+                        name="fc")(base_model.output)
+        prediction = Softmax(name="pred_age")(fc)
 
-    model = Model(inputs=base_model.input, outputs=prediction)
+        fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
+                        name="fc_2")(fc)
+        input_center = Input(shape=(1,)) # single value ground truth labels as inputs
+        centers = Embedding(n_bins,2)(input_center)
+
+        l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
+        model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
 
     return model
     
