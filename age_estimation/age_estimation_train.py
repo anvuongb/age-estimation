@@ -233,7 +233,7 @@ def main():
     # Initialize callbacks
     monitor_metric = "val_age_mae"
     if args.center_loss == 1:
-        monitor_metric = "pred_age_age_mae"
+        monitor_metric = "val_pred_age_age_mae"
 
     if opt_name is not 'adadelta':
         callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
