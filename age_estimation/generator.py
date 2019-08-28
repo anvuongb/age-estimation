@@ -114,7 +114,7 @@ class FaceValGeneratorCenter(Sequence):
             x[i] = cv2.resize(image, (image_size, image_size))
             y[i] = age
 
-        random_y = np.random.rand(len(current_batch_size), 1)
+        random_y = np.random.rand(current_batch_size, 1)
         return [x, y], [to_categorical(y, 70), random_y]
 
     def _load_meta_csv(self, meta_csv_path):
