@@ -186,7 +186,7 @@ def main():
     elif args.center_loss == 1:
         train_gen = FaceGeneratorCenter(meta_train_csv, batch_size=batch_size, image_size=image_size)
         val_gen = FaceValGeneratorCenter(meta_val_csv, batch_size=batch_size, image_size=image_size)
-        
+
     # Get model
     # If no weight file provided, model will be init with imagenet weight
     if weight_file is not None:
@@ -231,10 +231,14 @@ def main():
     tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=log_freq)
 
     # Initialize callbacks
+    monitor_metric = "val_age_mae"
+    if args.center_loss == 1:
+        monitor_metric = "pred_age_age_mae"
+
     if opt_name is not 'adadelta':
         callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
                     ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
-                                    monitor="val_age_mae",
+                                    monitor=monitor_metric,
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=True,
@@ -243,7 +247,7 @@ def main():
                     ]
     else:
         callbacks = [ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
-                                    monitor="val_age_mae",
+                                    monitor=monitor_metric,
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=True,
