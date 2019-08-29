@@ -40,6 +40,8 @@ def get_args():
                         help="model name: ResNet50 or InceptionResNetV2 or InceptionV3 or SEInceptionV3")
     parser.add_argument("--weight-file", type=str, 
                         help="continue to train from a pretrained model")
+    parser.add_argument("--weight-file-cl", type=int, default=0,
+                        help="weight-file for center loss or not")
     parser.add_argument("--log-freq", type=int, default=2000,
                         help="tensorboard log every x number of instances")
     parser.add_argument("--gpu", type=int, default=0,
@@ -137,10 +139,18 @@ def main():
     
     # Get model
     # If no weight file provided, model will be init with imagenet weight
-    model = get_model(model_name=model_name, weights='imagenet',
-                      weight_file=weight_file,
-                      last_layer_only=bool(args.last_layer),
-                      center_loss=bool(args.center_loss))
+    if bool(args.weight_file_cl)
+        model = get_model(model_name=model_name, weights='imagenet',
+                        weight_file=None,
+                        last_layer_only=bool(args.last_layer),
+                        center_loss=bool(args.center_loss))
+        print("loading weight from {}".format(weight_file))
+        model.load_weights(weight_file)
+    else:
+        model = get_model(model_name=model_name, weights='imagenet',
+                        weight_file=None,
+                        last_layer_only=bool(args.last_layer),
+                        center_loss=bool(args.center_loss))
 
     # Recompile model for correct loss function
     if args.center_loss == 0:
