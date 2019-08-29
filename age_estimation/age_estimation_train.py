@@ -139,7 +139,7 @@ def main():
     
     # Get model
     # If no weight file provided, model will be init with imagenet weight
-    if bool(args.weight_file_cl)
+    if bool(args.weight_file_cl):
         model = get_model(model_name=model_name, weights='imagenet',
                         weight_file=None,
                         last_layer_only=bool(args.last_layer),
