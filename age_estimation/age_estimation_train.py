@@ -15,7 +15,6 @@ from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
 
 
-
 ###########################################################
 # GENERATOR WILL REQUIRE N CSV WITH THE FOLLOWING FORMAT  #
 # img_path,age                                            #
@@ -189,18 +188,12 @@ def main():
 
     # Get model
     # If no weight file provided, model will be init with imagenet weight
-    if weight_file is not None:
-        print("Loading weight from {}".format(weight_file))
-        model = get_model(model_name=model_name, weights=None, 
-                          last_layer_only=bool(args.last_layer),
-                          center_loss=args.center_loss)
-        model.load_weights(weight_file)
-    else:
-        print("Loading weight from imagenet")
-        model = get_model(model_name=model_name, weights='imagenet',
-                          last_layer_only=bool(args.last_layer),
-                          center_loss=args.center_loss)
+    model = get_model(model_name=model_name, weights='imagenet',
+                      weight_file=weight_file,
+                      last_layer_only=bool(args.last_layer),
+                      center_loss=bool(args.center_loss))
 
+    # Recompile model for correct loss function
     if args.center_loss == 0:
         model.compile(optimizer=opt, 
                       loss="categorical_crossentropy", 
@@ -231,30 +224,50 @@ def main():
     tensorboard_callback = TensorBoard(log_dir=str(logdir), update_freq=log_freq)
 
     # Initialize callbacks
-    monitor_metric = "val_age_mae"
     if args.center_loss == 1:
         monitor_metric = "val_pred_age_age_mae"
-
-    if opt_name is not 'adadelta':
-        callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
-                    ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
-                                    monitor=monitor_metric,
-                                    verbose=1,
-                                    save_best_only=True,
-                                    save_weights_only=True,
-                                    mode="min"),
-                    tensorboard_callback
-                    ]
+        if opt_name is not 'adadelta':
+            callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
+                        ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_pred_age_loss:.3f}-{val_pred_age_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                        monitor=monitor_metric,
+                                        verbose=1,
+                                        save_best_only=True,
+                                        save_weights_only=True,
+                                        mode="min"),
+                        tensorboard_callback
+                        ]
+        else:
+            callbacks = [ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_pred_age_loss:.3f}-{val_pred_age_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                        monitor=monitor_metric,
+                                        verbose=1,
+                                        save_best_only=True,
+                                        save_weights_only=True,
+                                        mode="min"),
+                        tensorboard_callback
+                        ]
     else:
-        callbacks = [ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
-                                    monitor=monitor_metric,
-                                    verbose=1,
-                                    save_best_only=True,
-                                    save_weights_only=True,
-                                    mode="min"),
-                    tensorboard_callback
-                    ]
+        monitor_metric = "val_age_mae"
+        if opt_name is not 'adadelta':
+            callbacks = [LearningRateScheduler(schedule=Schedule(nb_epochs, initial_lr=lr)),
+                        ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                        monitor=monitor_metric,
+                                        verbose=1,
+                                        save_best_only=True,
+                                        save_weights_only=True,
+                                        mode="min"),
+                        tensorboard_callback
+                        ]
+        else:
+            callbacks = [ModelCheckpoint(str(weights_dir) + "/{}.".format(model_name) + "weights.{epoch:03d}-{val_loss:.3f}-{val_age_mae:.3f}" + "-{}.hdf5".format(dt_now),
+                                        monitor=monitor_metric,
+                                        verbose=1,
+                                        save_best_only=True,
+                                        save_weights_only=True,
+                                        mode="min"),
+                        tensorboard_callback
+                        ]
 
+    # Fit model
     model.fit_generator(generator=train_gen,
                         epochs=nb_epochs,
                         validation_data=val_gen,
