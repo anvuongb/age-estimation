@@ -18,8 +18,15 @@ def age_mae(y_true, y_pred):
     mae = K.mean(K.abs(true_age - pred_age))
     return mae
 
-def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', last_layer_only=False, center_loss=False):
+def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', 
+              weight_file=None, last_layer_only=False, center_loss=False):
     base_model = None
+    if weight_file is not None:
+        weights = None
+        print("loading weight from {}".format(weight_file))
+
+    if weights is not None:
+        print("loading weight from {}".format(weights))
 
     if model_name == "ResNet50":
         base_model = ResNet50(include_top=False, weights=weights, input_shape=(224, 224, 3), pooling="avg")
@@ -33,25 +40,69 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', la
     if last_layer_only:
         for layer in base_model.layers:
             layer.trainable=False
+    
+    if weight_file is None:
+        if center_loss is False:
+            prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
+                            name="pred_age")(base_model.output)
+            model = Model(inputs=base_model.input, outputs=prediction)
+        else:
+            fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
+                            name="fc")(base_model.output)
+            prediction = Softmax(name="pred_age")(fc)
 
-    if center_loss is False:
+            fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
+                            name="fc_2")(fc)
+            input_center = Input(shape=(1,)) # single value ground truth labels as inputs
+            centers = Embedding(n_bins,2)(input_center)
+
+            l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
+            model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
+        return model
+    else:
         prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
                         name="pred_age")(base_model.output)
         model = Model(inputs=base_model.input, outputs=prediction)
+        model.load_weights(weight_file)
+
+        if center_loss is False:
+            return model
+        else:
+            fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
+                            name="fc")(base_model.get_layer(index=-2).output)
+            prediction = Softmax(name="pred_age")(fc)
+
+            fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
+                            name="fc_2")(fc)
+            input_center = Input(shape=(1,)) # single value ground truth labels as inputs
+            centers = Embedding(n_bins,2)(input_center)
+
+            l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
+            model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
+            return model
+
+def get_model_with_gender(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', 
+                        weight_file=None, last_layer_only=False, center_loss=False, train_gender_only=True):
+    base_model = get_model(model_name=model_name, n_bins=n_bins, weights=weights, 
+                           weight_file=weight_file, last_layer_only=last_layer_only, center_loss=center_loss)      
+
+    if train_gender_only:
+        for layer in base_model.layers:
+            layer.trainable=False
+
+    if center_loss:
+        embedding = base_model.get_layer(index=-7).output
+        age = base_model.get_layer(name="pred_age").output
     else:
-        fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
-                        name="fc")(base_model.output)
-        prediction = Softmax(name="pred_age")(fc)
+        embedding = base_model.get_layer(index=-2).output
+        age = base_model.get_layer(name="pred_age").output
 
-        fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
-                        name="fc_2")(fc)
-        input_center = Input(shape=(1,)) # single value ground truth labels as inputs
-        centers = Embedding(n_bins,2)(input_center)
-
-        l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
-        model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
-
+    gender = Dense(1, kernel_initializer="he_normal", 
+                use_bias=False, activation="softmax", name="gender")(embedding)
+    
+    model = Model(inputs=base_model.input, outputs=[gender, age])
     return model
+
     
 def mean_loss(y_true, y_pred):
     n_bins = NUM_AGE_BINS
