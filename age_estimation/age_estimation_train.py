@@ -189,18 +189,12 @@ def main():
 
     # Get model
     # If no weight file provided, model will be init with imagenet weight
-    if weight_file is not None:
-        print("Loading weight from {}".format(weight_file))
-        model = get_model(model_name=model_name, weights=None, 
-                          last_layer_only=bool(args.last_layer),
-                          center_loss=args.center_loss)
-        model.load_weights(weight_file)
-    else:
-        print("Loading weight from imagenet")
-        model = get_model(model_name=model_name, weights='imagenet',
-                          last_layer_only=bool(args.last_layer),
-                          center_loss=args.center_loss)
+    model = get_model(model_name=model_name, weights='imagenet',
+                      weight_file=weight_file,
+                      last_layer_only=bool(args.last_layer),
+                      center_loss=bool(args.center_loss))
 
+    # Recompile model for correct loss function
     if args.center_loss == 0:
         model.compile(optimizer=opt, 
                       loss="categorical_crossentropy", 
@@ -274,6 +268,7 @@ def main():
                         tensorboard_callback
                         ]
 
+    # Fit model
     model.fit_generator(generator=train_gen,
                         epochs=nb_epochs,
                         validation_data=val_gen,
