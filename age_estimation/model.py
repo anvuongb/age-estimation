@@ -69,7 +69,7 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
             return model
         else:
             fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
-                            name="fc")(base_model.get_layer(index=-2))
+                            name="fc")(base_model.get_layer(index=-2).output)
             prediction = Softmax(name="pred_age")(fc)
 
             fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
@@ -81,7 +81,28 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
             model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
             return model
 
-       
+def get_model_with_gender(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', 
+                        weight_file=None, last_layer_only=False, center_loss=False, train_gender_only=True):
+    base_model = get_model(model_name=model_name, n_bins=n_bins, weights=weights, 
+                           weight_file=weight_file, last_layer_only=last_layer_only, center_loss=center_loss)      
+
+    if train_gender_only:
+        for layer in base_model.layers:
+            layer.trainable=False
+
+    if center_loss:
+        embedding = base_model.get_layer(index=-7).output
+        age = base_model.get_layer(name="pred_age").output
+    else:
+        embedding = base_model.get_layer(index=-2).output
+        age = base_model.get_layer(name="pred_age").output
+
+    gender = Dense(1, kernel_initializer="he_normal", 
+                use_bias=False, activation="softmax", name="gender")(embedding)
+    
+    model = Model(inputs=base_model.input, outputs=[gender, age])
+    return model
+
 def mean_loss(y_true, y_pred):
     n_bins = NUM_AGE_BINS
     mean_age_true = K.sum(y_true * K.arange(0, n_bins, dtype="float32"), axis=-1)
@@ -141,7 +162,7 @@ def mean_variance_loss(y_true, y_pred):
 
 
 def main():
-    model = get_model("InceptionV3", last_layer_only=True, weights=None, center_loss=True)
+    model = get_model_with_gender("ResNet50", last_layer_only=True, weights=None, center_loss=False)
     model.summary()
     print(model.get_layer(index=-2))
 
