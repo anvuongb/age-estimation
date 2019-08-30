@@ -148,7 +148,7 @@ def main():
         model.load_weights(weight_file)
     else:
         model = get_model(model_name=model_name, weights='imagenet',
-                        weight_file=None,
+                        weight_file=weight_file,
                         last_layer_only=bool(args.last_layer),
                         center_loss=bool(args.center_loss))
 
