@@ -23,7 +23,6 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
     base_model = None
     if weight_file is not None:
         weights = None
-        print("loading weight from {}".format(weight_file))
 
     if weights is not None:
         print("loading weight from {}".format(weights))
@@ -63,13 +62,14 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
         prediction = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation="softmax",
                         name="pred_age")(base_model.output)
         model = Model(inputs=base_model.input, outputs=prediction)
+        print("loading weight from {}".format(weight_file))
         model.load_weights(weight_file)
 
         if center_loss is False:
             return model
         else:
             fc = Dense(n_bins, kernel_initializer="he_normal", use_bias=False, activation=None,
-                            name="fc")(base_model.get_layer(index=-2).output)
+                            name="fc")(model.get_layer(index=-2).output)
             prediction = Softmax(name="pred_age")(fc)
 
             fc_2 = Dense(2, kernel_initializer="he_normal", use_bias=False, activation=None,
@@ -78,7 +78,7 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
             centers = Embedding(n_bins,2)(input_center)
 
             l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
-            model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
+            model = Model(inputs=[model.input, input_center], outputs=[prediction, l2_loss])
             return model
 
 def get_model_with_gender(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet', 
