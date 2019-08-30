@@ -140,8 +140,8 @@ def main():
     # Get model
     # If no weight file provided, model will be init with imagenet weight
     if bool(args.weight_file_cl):
-        model = get_model(model_name=model_name, weights='imagenet',
-                        weight_file=None,
+        model = get_model(model_name=model_name, weights=None,
+                        weight_file=weight_file,
                         last_layer_only=bool(args.last_layer),
                         center_loss=bool(args.center_loss))
         print("loading model center loss weight from {}".format(weight_file))
@@ -151,6 +151,7 @@ def main():
                         weight_file=weight_file,
                         last_layer_only=bool(args.last_layer),
                         center_loss=bool(args.center_loss))
+    model.summary()
 
     # Recompile model for correct loss function
     if args.center_loss == 0:
