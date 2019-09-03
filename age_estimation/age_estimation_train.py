@@ -185,7 +185,7 @@ def main():
         image_size = 299
 
     # Initialize generator
-    if args.center_loss == 0:
+    if args.center_loss == 0 and args.mean_loss == 0:
         train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
         val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
     elif args.center_loss == 1 and args.mean_loss == 0:
