@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam, Adadelta
 import tensorflow.keras.backend as K
 import tensorflow as tf
-from generator import FaceGenerator, FaceValGenerator, FaceGeneratorCenter, FaceValGeneratorCenter, FaceGeneratorMean, FaceValGeneratorMean
+from generator import FaceGenerator, FaceValGenerator, FaceGeneratorCenter, FaceValGeneratorCenter, FaceGeneratorMean, FaceValGeneratorMean, FaceValGeneratorCenterMean, FaceValGeneratorCenterMean
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
 
@@ -194,6 +194,9 @@ def main():
     elif args.center_loss == 0 and args.mean_loss == 1:
         train_gen = FaceGeneratorMean(meta_train_csv, batch_size=batch_size, image_size=image_size)
         val_gen = FaceValGeneratorMean(meta_val_csv, batch_size=batch_size, image_size=image_size)
+    elif args.center_loss == 1 and args.mean_loss == 1:
+        train_gen = FaceGeneratorCenterMean(meta_train_csv, batch_size=batch_size, image_size=image_size)
+        val_gen = FaceValGeneratorCenterMean(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
     # If no weight file provided, model will be init with imagenet weight
@@ -232,6 +235,14 @@ def main():
                       loss=["categorical_crossentropy", lambda y_true, y_pred: y_pred], 
                       metrics=[age_mae],
                       loss_weights=[1, lambda_m])
+        model.summary()
+    elif args.center_loss == 1 and args.mean_loss == 1:
+        lambda_m = args.lambda_m
+        lambda_c = args.lambda_c
+        model.compile(optimizer=opt, 
+                      loss=["categorical_crossentropy", lambda y_true, y_pred: y_pred, lambda y_true, y_pred: y_pred], 
+                      metrics=[age_mae],
+                      loss_weights=[1, lambda_c, lambda_m])
         model.summary()
 
     # Create output directory
