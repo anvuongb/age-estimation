@@ -214,7 +214,7 @@ def main():
     model.summary()
 
     # Recompile model for correct loss function
-    if args.center_loss == 0:
+    if args.center_loss == 0 and args.mean_loss == 0:
         model.compile(optimizer=opt, 
                       loss="categorical_crossentropy", 
                       metrics=[age_mae])
