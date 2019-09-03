@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam, Adadelta
 import tensorflow.keras.backend as K
 import tensorflow as tf
-from generator import FaceGenerator, FaceValGenerator, FaceGeneratorCenter, FaceValGeneratorCenter
+from generator import FaceGenerator, FaceValGenerator, FaceGeneratorCenter, FaceValGeneratorCenter, FaceGeneratorMean, FaceValGeneratorMean
 from model import get_model, age_mae, mean_variance_loss
 from datetime import datetime
 
@@ -64,7 +64,11 @@ def get_args():
     parser.add_argument("--center-loss", type=int, default=0,
                         help="use center loss with crossentropy")    
     parser.add_argument("--lambda-c", type=float, default=0.2,
-                        help="lambda to adjust center loss")                                                    
+                        help="lambda to adjust center loss")
+    parser.add_argument("--mean-loss", type=int, default=0,
+                        help="use mean loss with crossentropy")    
+    parser.add_argument("--lambda-m", type=float, default=0.2,
+                        help="lambda to adjust mean loss")                                                     
     args = parser.parse_args()
     return args
 
@@ -184,9 +188,12 @@ def main():
     if args.center_loss == 0:
         train_gen = FaceGenerator(meta_train_csv, batch_size=batch_size, image_size=image_size)
         val_gen = FaceValGenerator(meta_val_csv, batch_size=batch_size, image_size=image_size)
-    elif args.center_loss == 1:
+    elif args.center_loss == 1 and args.mean_loss == 0:
         train_gen = FaceGeneratorCenter(meta_train_csv, batch_size=batch_size, image_size=image_size)
         val_gen = FaceValGeneratorCenter(meta_val_csv, batch_size=batch_size, image_size=image_size)
+    elif args.center_loss == 0 and args.mean_loss == 1:
+        train_gen = FaceGeneratorMean(meta_train_csv, batch_size=batch_size, image_size=image_size)
+        val_gen = FaceValGeneratorMean(meta_val_csv, batch_size=batch_size, image_size=image_size)
 
     # Get model
     # If no weight file provided, model will be init with imagenet weight
@@ -194,14 +201,16 @@ def main():
         model = get_model(model_name=model_name, weights=None,
                         weight_file=weight_file,
                         last_layer_only=bool(args.last_layer),
-                        center_loss=bool(args.center_loss))
+                        center_loss=bool(args.center_loss),
+                        mean_loss=bool(args.mean_loss))
         print("loading model center loss weight from {}".format(weight_file))
         model.load_weights(weight_file)
     else:
         model = get_model(model_name=model_name, weights='imagenet',
                         weight_file=weight_file,
                         last_layer_only=bool(args.last_layer),
-                        center_loss=bool(args.center_loss))
+                        center_loss=bool(args.center_loss),
+                        mean_loss=bool(args.mean_loss))
     model.summary()
 
     # Recompile model for correct loss function
@@ -210,12 +219,19 @@ def main():
                       loss="categorical_crossentropy", 
                       metrics=[age_mae])
         model.summary()
-    elif args.center_loss == 1:
+    elif args.center_loss == 1 and args.mean_loss == 0:
         lambda_c = args.lambda_c
         model.compile(optimizer=opt, 
                       loss=["categorical_crossentropy", lambda y_true, y_pred: y_pred], 
                       metrics=[age_mae],
                       loss_weights=[1, lambda_c])
+        model.summary()
+    elif args.center_loss == 0 and args.mean_loss == 1:
+        lambda_m = args.lambda_m
+        model.compile(optimizer=opt, 
+                      loss=["categorical_crossentropy", lambda y_true, y_pred: y_pred], 
+                      metrics=[age_mae],
+                      loss_weights=[1, lambda_m])
         model.summary()
 
     # Create output directory
