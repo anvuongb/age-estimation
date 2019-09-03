@@ -55,7 +55,7 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
             input_center = Input(shape=(1,)) # single value ground truth labels as inputs
             centers = Embedding(n_bins,2)(input_center)
 
-            l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1]),1,keepdims=True),name='l2_loss')([fc_2, centers])
+            l2_loss = Lambda(lambda x: K.sum(K.square(x[0]-x[1][:,0]),1,keepdims=True),name='l2_loss')([fc_2, centers])
             model = Model(inputs=[base_model.input, input_center], outputs=[prediction, l2_loss])
             return model
         elif center_loss is False and mean_loss is True:
@@ -93,7 +93,7 @@ def get_model(model_name="ResNet50", n_bins=NUM_AGE_BINS, weights='imagenet',
                             name="pred_age")(model.output)
 
             input_mean_loss = Input(shape=(n_bins,)) 
-            mean_loss_layer = Lambda(lambda x: mean_loss_func(x[0], x[1][:,0]),name='mean_loss')([input_mean_loss, prediction])
+            mean_loss_layer = Lambda(lambda x: mean_loss_func(x[0], x[1]),name='mean_loss')([input_mean_loss, prediction])
             model = Model(inputs=[model.input, input_mean_loss], outputs=[prediction, mean_loss_layer])
             return model
 
